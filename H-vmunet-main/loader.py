@@ -81,3 +81,27 @@ class isic_loader(Dataset):
     def __len__(self):
         return len(self.data)
     
+from dataset.wavelet_mixup import wavelet_mixup
+
+class RealSynthUSLoader(Dataset):
+    """Load real and Ultrasound-LDM synthetic data with Wavelet-MixUp"""
+    def __init__(self, root, train=True, alpha=0.5):
+        super().__init__()
+        self.real = isic_loader(os.path.join(root, 'real/'), train=train, Test=not train)
+        self.synth = isic_loader(os.path.join(root, 'synth/'), train=train, Test=not train)
+        self.alpha = alpha
+        self.train = train
+
+    def __len__(self):
+        return len(self.real)
+
+    def __getitem__(self, idx):
+        img1, msk1 = self.real[idx]
+        img2, msk2 = self.synth[random.randint(0, len(self.synth)-1)]
+        if self.train:
+            img_mix = wavelet_mixup(img1.permute(1,2,0).numpy(), img2.permute(1,2,0).numpy(), self.alpha)
+            img_mix = torch.tensor(img_mix).permute(2,0,1)
+        else:
+            img_mix = img1
+        msk_mix = (msk1 + msk2) / 2
+        return img_mix.float(), msk_mix.float()

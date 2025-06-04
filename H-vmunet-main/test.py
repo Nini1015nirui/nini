@@ -60,7 +60,7 @@ def main(config):
 
 
     print('#----------Preparing dataset----------#')
-    test_dataset = isic_loader(path_Data = config.data_path, train = False, Test = True)
+    test_dataset = RealSynthUSLoader(root=config.data_path, train=False)
     test_loader = DataLoader(test_dataset,
                                 batch_size=1,
                                 shuffle=False,
