@@ -48,24 +48,24 @@ def main(config):
 
 
     print('#----------Preparing dataset----------#')
-    train_dataset = isic_loader(path_Data = config.data_path, train = True)
+    train_dataset = RealSynthUSLoader(root=config.data_path, train=True)
     train_loader = DataLoader(train_dataset,
-                                batch_size=config.batch_size, 
+                                batch_size=config.batch_size,
                                 shuffle=True,
                                 pin_memory=True,
                                 num_workers=config.num_workers)
-    val_dataset = isic_loader(path_Data = config.data_path, train = False)
+    val_dataset = RealSynthUSLoader(root=config.data_path, train=False)
     val_loader = DataLoader(val_dataset,
                                 batch_size=1,
                                 shuffle=False,
-                                pin_memory=True, 
+                                pin_memory=True,
                                 num_workers=config.num_workers,
                                 drop_last=True)
-    test_dataset = isic_loader(path_Data = config.data_path, train = False, Test = True)
+    test_dataset = RealSynthUSLoader(root=config.data_path, train=False)
     test_loader = DataLoader(test_dataset,
                                 batch_size=1,
                                 shuffle=False,
-                                pin_memory=True, 
+                                pin_memory=True,
                                 num_workers=config.num_workers,
                                 drop_last=True)
 

@@ -1,5 +1,6 @@
 from torchvision import transforms
 from utils import *
+from losses.cldice import CombinedLoss
 
 from datetime import datetime
 
@@ -29,7 +30,7 @@ class setting_config:
     else:
         raise Exception('datasets in not right!')
 
-    criterion = BceDiceLoss()
+    criterion = CombinedLoss(BceDiceLoss())
 
     num_classes = 1
     input_size_h = 256
