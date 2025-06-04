@@ -1,11 +1,6 @@
 <div id="top" align="center">
 
 # H-vmunet: High-order Vision Mamba UNet for Medical Image Segmentation
-  
-  Renkai Wu, Yinghao Liu, Pengchen Liang*, and Qing Chang* </br>
-  
-  [![Neucom](https://img.shields.io/badge/Neucom-2025.129447-blue)](https://doi.org/10.1016/j.neucom.2025.129447)
-  [![arXiv](https://img.shields.io/badge/arXiv-2403.13642-b31b1b.svg)](https://arxiv.org/abs/2403.13642)
 
 </div>
 
