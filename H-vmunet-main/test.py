@@ -40,23 +40,22 @@ def main(config):
 
 
 
-    print('#----------GPU init----------#')
+    print('#----------Device init----------#')
     set_seed(config.seed)
-    gpu_ids = [0]# [0, 1, 2, 3]
-    torch.cuda.empty_cache()
+    device = config.device
     
 
 
     print('#----------Prepareing Models----------#')
     model_cfg = config.model_config    
-    model = H_vmunet(num_classes=model_cfg['num_classes'], 
-                    input_channels=model_cfg['input_channels'], 
-                    c_list=model_cfg['c_list'], 
-                    split_att=model_cfg['split_att'], 
+    model = H_vmunet(num_classes=model_cfg['num_classes'],
+                    input_channels=model_cfg['input_channels'],
+                    c_list=model_cfg['c_list'],
+                    split_att=model_cfg['split_att'],
                     bridge=model_cfg['bridge'],
                     drop_path_rate=model_cfg['drop_path_rate'])
-    
-    model = torch.nn.DataParallel(model.cuda(), device_ids=gpu_ids, output_device=gpu_ids[0])
+
+    model = model.to(device)
 
 
     print('#----------Preparing dataset----------#')
@@ -86,7 +85,7 @@ def main(config):
 
     print('#----------Testing----------#')
     best_weight = torch.load(resume_model, map_location=torch.device('cpu'))
-    model.module.load_state_dict(best_weight)
+    model.load_state_dict(best_weight)
     loss = test_one_epoch(
             test_loader,
             model,

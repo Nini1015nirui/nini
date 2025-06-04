@@ -8,6 +8,9 @@ import sys
 import torch.fft
 import math
 from .vmamba import SS2D
+from .patchify import PatchifyStem
+from .bifusion import BiFusion
+from .upconv import UpConv
 
 import traceback
 
@@ -257,12 +260,10 @@ class H_vmunet(nn.Module):
         self.use_checkpoint = use_checkpoint
         self.bridge = bridge
         
-        self.encoder1 = nn.Sequential(
-            nn.Conv2d(input_channels, c_list[0], 3, stride=1, padding=1),
-        )
+        self.encoder1 = PatchifyStem(input_channels, c_list[0])
         self.encoder2 =nn.Sequential(
             nn.Conv2d(c_list[0], c_list[1], 3, stride=1, padding=1),
-        ) 
+        )
 
 
         dp_rates=[x.item() for x in torch.linspace(0, drop_path_rate, sum(depths))] 
@@ -341,7 +342,13 @@ class H_vmunet(nn.Module):
 
         self.decoder5 = nn.Sequential(
             nn.Conv2d(c_list[1], c_list[0], 3, stride=1, padding=1),
-        )  
+        )
+
+        self.up4 = UpConv(c_list[3], c_list[3])
+        self.up3 = UpConv(c_list[2], c_list[2])
+        self.up2 = UpConv(c_list[1], c_list[1])
+        self.up1 = UpConv(c_list[0], c_list[0])
+        self.up0 = UpConv(num_classes, num_classes)
 
         self.ebn1 = nn.GroupNorm(4, c_list[0])
         self.ebn2 = nn.GroupNorm(4, c_list[1])
@@ -353,6 +360,12 @@ class H_vmunet(nn.Module):
         self.dbn3 = nn.GroupNorm(4, c_list[2])
         self.dbn4 = nn.GroupNorm(4, c_list[1])
         self.dbn5 = nn.GroupNorm(4, c_list[0])
+
+        self.fuse5 = BiFusion(c_list[4])
+        self.fuse4 = BiFusion(c_list[3])
+        self.fuse3 = BiFusion(c_list[2])
+        self.fuse2 = BiFusion(c_list[1])
+        self.fuse1 = BiFusion(c_list[0])
 
         self.final = nn.Conv2d(c_list[0], num_classes, kernel_size=1)
 
@@ -378,8 +391,8 @@ class H_vmunet(nn.Module):
 
     def forward(self, x):
         
-        out = F.gelu(F.max_pool2d(self.ebn1(self.encoder1(x)),2,2))
-        t1 = out # b, c0, H/2, W/2
+        out = self.encoder1(x)
+        t1 = out
 
         out = F.gelu(F.max_pool2d(self.ebn2(self.encoder2(out)),2,2))
         t2 = out # b, c1, H/4, W/4 
@@ -398,22 +411,22 @@ class H_vmunet(nn.Module):
         
         out = F.gelu(self.encoder6(out)) # b, c5, H/32, W/32
         
-        out5 = F.gelu(self.dbn1(self.decoder1(out))) # b, c4, H/32, W/32
-        out5 = torch.add(out5, t5) # b, c4, H/32, W/32
+        out5 = F.gelu(self.dbn1(self.decoder1(out)))
+        out5 = self.fuse5(out5, t5)
         
-        out4 = F.gelu(F.interpolate(self.dbn2(self.decoder2(out5)),scale_factor=(2,2),mode ='bilinear',align_corners=True)) # b, c3, H/16, W/16
-        out4 = torch.add(out4, t4) # b, c3, H/16, W/16
+        out4 = self.up4(self.dbn2(self.decoder2(out5)))
+        out4 = self.fuse4(out4, t4)
         
-        out3 = F.gelu(F.interpolate(self.dbn3(self.decoder3(out4)),scale_factor=(2,2),mode ='bilinear',align_corners=True)) # b, c2, H/8, W/8
-        out3 = torch.add(out3, t3) # b, c2, H/8, W/8
+        out3 = self.up3(self.dbn3(self.decoder3(out4)))
+        out3 = self.fuse3(out3, t3)
         
-        out2 = F.gelu(F.interpolate(self.dbn4(self.decoder4(out3)),scale_factor=(2,2),mode ='bilinear',align_corners=True)) # b, c1, H/4, W/4
-        out2 = torch.add(out2, t2) # b, c1, H/4, W/4 
+        out2 = self.up2(self.dbn4(self.decoder4(out3)))
+        out2 = self.fuse2(out2, t2)
         
-        out1 = F.gelu(F.interpolate(self.dbn5(self.decoder5(out2)),scale_factor=(2,2),mode ='bilinear',align_corners=True)) # b, c0, H/2, W/2
-        out1 = torch.add(out1, t1) # b, c0, H/2, W/2
+        out1 = self.up1(self.dbn5(self.decoder5(out2)))
+        out1 = self.fuse1(out1, t1)
         
-        out0 = F.interpolate(self.final(out1),scale_factor=(2,2),mode ='bilinear',align_corners=True) # b, num_class, H, W
+        out0 = self.up0(self.final(out1))
         
         return torch.sigmoid(out0)
 

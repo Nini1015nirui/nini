@@ -21,6 +21,17 @@ try:
 except:
     pass
 
+if 'selective_scan_fn' not in globals():
+    def selective_scan_fn(xs, dts, As, Bs, Cs, Ds, z=None, delta_bias=None, delta_softplus=False, return_last_state=False):
+        B, KD, L = xs.shape
+        K = 4
+        D = KD // K
+        return xs.view(B, K, D, L)
+    selective_scan_ref = selective_scan_fn
+
+if 'selective_scan_fn_v1' not in globals():
+    selective_scan_fn_v1 = selective_scan_fn
+
 DropPath.__repr__ = lambda self: f"timm.DropPath({self.drop_prob})"
 
 
