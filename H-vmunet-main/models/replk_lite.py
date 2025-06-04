@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class RepLKLiteBlock(nn.Module):
     """RepLK-Lite Large-Kernel Block with re-parameterization"""
-    def __init__(self, channels, kernel_size=31):
+    def __init__(self, channels, kernel_size=17):
         super().__init__()
         padding = kernel_size // 2
         self.dw = nn.Conv2d(channels, channels, kernel_size, padding=padding, groups=channels, bias=False)
