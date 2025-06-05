@@ -20,13 +20,9 @@ class setting_config:
 
     test_weights = ''
 
-    datasets = 'ISIC2017'
-    if datasets == 'ISIC2017':
-        data_path = ''
-    elif datasets == 'Spleen':
-        data_path = ''
-    elif datasets == 'CVC-ClinicDB':
-        data_path = ''
+    datasets = 'PennFudan'
+    if datasets == 'PennFudan':
+        data_path = 'data/seg_dataset/'
     else:
         raise Exception('datasets in not right!')
 
@@ -44,8 +40,8 @@ class setting_config:
     world_size = None
     rank = None
     amp = False
-    batch_size = 8
-    epochs = 250
+    batch_size = 2
+    epochs = 2
 
     work_dir = 'results/' + network + '_' + datasets + '_' + datetime.now().strftime('%A_%d_%B_%Y_%Hh_%Mm_%Ss') + '/'
 
