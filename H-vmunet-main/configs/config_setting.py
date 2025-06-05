@@ -144,3 +144,4 @@ class setting_config:
         milestones = [125, 225]
     elif sch == 'WP_CosineLR':
         warm_up_epochs = 20
+
