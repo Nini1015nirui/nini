@@ -69,18 +69,5 @@ python test.py
 *C.CVC-ClinicDB* </br>
 [Google Drive](https://drive.google.com/file/d/1mG_zOlsz7OuX_qHVmB3mjMeb1GUNgtkP/view?usp=sharing)
 
-
-## Citation
-If you find this repository helpful, please consider citing: </br>
-```
-@article{wu2025h,
-  title={H-vmunet: High-order vision mamba unet for medical image segmentation},
-  author={Wu, Renkai and Liu, Yinghao and Liang, Pengchen and Chang, Qing},
-  journal={Neurocomputing},
-  pages={129447},
-  year={2025},
-  publisher={Elsevier}
-}
-```
 ## Acknowledgement
 Thanks to [Vim](https://github.com/hustvl/Vim), [HorNet](https://github.com/raoyongming/HorNet) and [VM-UNet](https://github.com/JCruan519/VM-UNet) for their outstanding work.
