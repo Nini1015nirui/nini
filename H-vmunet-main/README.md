@@ -20,6 +20,12 @@ pip install mamba_ssm==1.0.1  # mmamba_ssm-1.0.1+cu118torch1.13cxx11abiFALSE-cp3
 pip install scikit-learn matplotlib thop h5py SimpleITK scikit-image medpy yacs
 ```
 
+**Using CUDA for training.**
+After installing the GPU-enabled PyTorch above, edit `configs/config_setting.py`
+and set `device = 'cuda'`. If multiple GPUs are available, modify
+`CUDA_VISIBLE_DEVICES` in `train.py` and `test.py` (default is `"0"`) or export
+the environment variable before running.
+
 **1. Datasets.**
 
 *A.ISIC2017* </br>
