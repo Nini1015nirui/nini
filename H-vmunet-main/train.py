@@ -38,10 +38,9 @@ def main(config):
 
 
 
-    print('#----------GPU init----------#')
+    print('#----------Device init----------#')
     set_seed(config.seed)
-    gpu_ids = [0]# [0, 1, 2, 3]
-    torch.cuda.empty_cache()
+    device = config.device
 
 
 
@@ -74,14 +73,14 @@ def main(config):
 
     print('#----------Prepareing Models----------#')
     model_cfg = config.model_config
-    model = H_vmunet(num_classes=model_cfg['num_classes'], 
-                    input_channels=model_cfg['input_channels'], 
-                    c_list=model_cfg['c_list'], 
-                    split_att=model_cfg['split_att'], 
+    model = H_vmunet(num_classes=model_cfg['num_classes'],
+                    input_channels=model_cfg['input_channels'],
+                    c_list=model_cfg['c_list'],
+                    split_att=model_cfg['split_att'],
                     bridge=model_cfg['bridge'],
                     drop_path_rate=model_cfg['drop_path_rate'])
-    
-    model = torch.nn.DataParallel(model.cuda(), device_ids=gpu_ids, output_device=gpu_ids[0])
+
+    model = model.to(device)
 
 
 
@@ -109,7 +108,7 @@ def main(config):
     if os.path.exists(resume_model):
         print('#----------Resume Model and Other params----------#')
         checkpoint = torch.load(resume_model, map_location=torch.device('cpu'))
-        model.module.load_state_dict(checkpoint['model_state_dict'])
+        model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         saved_epoch = checkpoint['epoch']
@@ -126,7 +125,7 @@ def main(config):
     print('#----------Training----------#')
     for epoch in range(start_epoch, config.epochs + 1):
 
-        torch.cuda.empty_cache()
+        pass
 
         train_one_epoch(
             train_loader,
@@ -151,7 +150,7 @@ def main(config):
 
 
         if loss < min_loss:
-            torch.save(model.module.state_dict(), os.path.join(checkpoint_dir, 'best.pth'))
+            torch.save(model.state_dict(), os.path.join(checkpoint_dir, 'best.pth'))
             min_loss = loss
             min_epoch = epoch
 
@@ -161,7 +160,7 @@ def main(config):
                 'min_loss': min_loss,
                 'min_epoch': min_epoch,
                 'loss': loss,
-                'model_state_dict': model.module.state_dict(),
+                'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'scheduler_state_dict': scheduler.state_dict(),
             }, os.path.join(checkpoint_dir, 'latest.pth')) 
@@ -169,7 +168,7 @@ def main(config):
     if os.path.exists(os.path.join(checkpoint_dir, 'best.pth')):
         print('#----------Testing----------#')
         best_weight = torch.load(config.work_dir + 'checkpoints/best.pth', map_location=torch.device('cpu'))
-        model.module.load_state_dict(best_weight)
+        model.load_state_dict(best_weight)
         loss = test_one_epoch(
                 test_loader,
                 model,

@@ -30,7 +30,7 @@ class setting_config:
     else:
         raise Exception('datasets in not right!')
 
-    criterion = CombinedLoss(BceDiceLoss())
+    criterion = CombinedLoss(BceDiceLoss(), l2_weight=0.1)
 
     num_classes = 1
     input_size_h = 256
@@ -40,6 +40,7 @@ class setting_config:
     local_rank = -1
     num_workers = 0
     seed = 42
+    device = 'cpu'
     world_size = None
     rank = None
     amp = False

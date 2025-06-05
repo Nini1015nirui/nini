@@ -26,7 +26,8 @@ def train_one_epoch(train_loader,
     for iter, data in enumerate(train_loader):
         optimizer.zero_grad()
         images, targets = data
-        images, targets = images.cuda(non_blocking=True).float(), targets.cuda(non_blocking=True).float()
+        device = config.device
+        images, targets = images.to(device).float(), targets.to(device).float()
         if config.amp:
             with autocast():
                 out = model(images)
@@ -64,7 +65,8 @@ def val_one_epoch(test_loader,
     with torch.no_grad():
         for data in tqdm(test_loader):
             img, msk = data
-            img, msk = img.cuda(non_blocking=True).float(), msk.cuda(non_blocking=True).float()
+            device = config.device
+            img, msk = img.to(device).float(), msk.to(device).float()
             out = model(img)
             loss = criterion(out, msk)
             loss_list.append(loss.item())
@@ -117,7 +119,8 @@ def test_one_epoch(test_loader,
     with torch.no_grad():
         for i, data in enumerate(tqdm(test_loader)):
             img, msk = data
-            img, msk = img.cuda(non_blocking=True).float(), msk.cuda(non_blocking=True).float()
+            device = config.device
+            img, msk = img.to(device).float(), msk.to(device).float()
             out = model(img)
             loss = criterion(out, msk)
             loss_list.append(loss.item())

@@ -37,21 +37,32 @@ class cbDiceLoss(nn.Module):
 
 
 class CombinedLoss(nn.Module):
-    """Combination of BCE-Dice, clDice and cbDice."""
-    def __init__(self, bce_dice, use_cl=True, use_cb=True):
+    """Combination of BCE-Dice, clDice, cbDice and optional L2."""
+    def __init__(self, bce_dice, use_cl=True, use_cb=True, l2_weight=0.0):
         super().__init__()
         self.bce_dice = bce_dice
         self.use_cl = use_cl
         self.use_cb = use_cb
+        self.l2_weight = l2_weight
         if use_cl:
             self.cl = clDiceLoss()
         if use_cb:
             self.cb = cbDiceLoss()
 
     def forward(self, pred, target):
-        loss = self.bce_dice(pred, target)
+        if isinstance(pred, tuple):
+            seg, _edge, thick = pred
+        else:
+            seg = pred
+            thick = None
+
+        loss = self.bce_dice(seg, target)
         if self.use_cl:
-            loss = loss + self.cl(pred, target)
+            loss = loss + self.cl(seg, target)
         if self.use_cb:
-            loss = loss + self.cb(pred, target)
+            loss = loss + self.cb(seg, target)
+
+        if thick is not None and self.l2_weight > 0:
+            loss = loss + self.l2_weight * F.mse_loss(thick.squeeze(), torch.zeros_like(thick.squeeze()))
+
         return loss

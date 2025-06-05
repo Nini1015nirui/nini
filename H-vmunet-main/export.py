@@ -1,6 +1,7 @@
 import argparse
 import torch
 import onnx
+from onnx import optimizer
 from torch.onnx import export
 from models.H_vmunet import H_vmunet
 from configs.config_setting import setting_config
@@ -11,7 +12,7 @@ except Exception:
     trt = None
 
 
-def export_int8(checkpoint, output, calib_dir):
+def export_trt(checkpoint, output, mode='fp16'):
     model_cfg = setting_config.model_config
     model = H_vmunet(num_classes=model_cfg['num_classes'],
                      input_channels=model_cfg['input_channels'],
@@ -25,6 +26,11 @@ def export_int8(checkpoint, output, calib_dir):
     dummy = torch.randn(1, model_cfg['input_channels'], 256, 256)
     onnx_path = output + '.onnx'
     export(model, dummy, onnx_path, opset_version=17)
+    onnx_model = onnx.load(onnx_path)
+    passes = ["fuse_bn_into_conv", "fuse_add_bias_into_conv"]
+    onnx_model = optimizer.optimize(onnx_model, passes)
+    onnx.save(onnx_model, onnx_path)
+    print('ONNX graph fused saved to', onnx_path)
 
     if trt is None:
         print('TensorRT not available. ONNX model exported.')
@@ -37,7 +43,10 @@ def export_int8(checkpoint, output, calib_dir):
     with open(onnx_path, 'rb') as f:
         parser.parse(f.read())
     config = builder.create_builder_config()
-    config.set_flag(trt.BuilderFlag.INT8)
+    if mode == 'int8':
+        config.set_flag(trt.BuilderFlag.INT8)
+    else:
+        config.set_flag(trt.BuilderFlag.FP16)
     config.max_workspace_size = 1 << 28
     builder.max_batch_size = 1
     engine = builder.build_engine(network, config)
@@ -50,6 +59,6 @@ if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--checkpoint', required=True)
     ap.add_argument('--output', required=True)
-    ap.add_argument('--calib', default='calib')
+    ap.add_argument('--mode', choices=['fp16', 'int8'], default='fp16')
     args = ap.parse_args()
-    export_int8(args.checkpoint, args.output, args.calib)
+    export_trt(args.checkpoint, args.output, mode=args.mode)
