@@ -5,10 +5,9 @@ import random
 import os
 from PIL import Image
 from einops.layers.torch import Rearrange
-from scipy.ndimage.morphology import binary_dilation
 from torch.utils.data import Dataset
 from torchvision import transforms
-from scipy import ndimage
+from PIL import Image as PILImage
 from utils import *
 
 
@@ -72,8 +71,11 @@ class isic_loader(Dataset):
     
     def random_rotate(self,image, label):
         angle = np.random.randint(20, 80)
-        image = ndimage.rotate(image, angle, order=0, reshape=False)
-        label = ndimage.rotate(label, angle, order=0, reshape=False)
+        img_pil = PILImage.fromarray(image.astype(np.uint8))
+        label_pil = PILImage.fromarray(np.squeeze(label).astype(np.uint8), mode='L')
+        image = np.array(img_pil.rotate(angle))
+        label = np.array(label_pil.rotate(angle))
+        label = np.expand_dims(label, axis=2)
         return image, label
 
 

@@ -9,7 +9,7 @@ import math
 import random
 import logging
 import logging.handlers
-from matplotlib import pyplot as plt
+from PIL import Image as PILImage
 
 
 def set_seed(seed):
@@ -224,32 +224,27 @@ def get_scheduler(config, optimizer):
 
 def save_imgs(img, msk, msk_pred, i, save_path, datasets, threshold=0.5, test_data_name=None):
     img = img.squeeze(0).permute(1,2,0).detach().cpu().numpy()
-    img = img / 255. if img.max() > 1.1 else img
+    img = img / 255.0 if img.max() > 1.1 else img
     if datasets == 'retinal':
         msk = np.squeeze(msk, axis=0)
         msk_pred = np.squeeze(msk_pred, axis=0)
     else:
         msk = np.where(np.squeeze(msk, axis=0) > 0.5, 1, 0)
-        msk_pred = np.where(np.squeeze(msk_pred, axis=0) > threshold, 1, 0) 
+        msk_pred = np.where(np.squeeze(msk_pred, axis=0) > threshold, 1, 0)
 
-    plt.figure(figsize=(7,15))
+    img_pil = PILImage.fromarray((img * 255).astype(np.uint8))
+    msk_pil = PILImage.fromarray((msk * 255).astype(np.uint8))
+    pred_pil = PILImage.fromarray((msk_pred * 255).astype(np.uint8))
 
-    plt.subplot(3,1,1)
-    plt.imshow(img)
-    plt.axis('off')
-
-    plt.subplot(3,1,2)
-    plt.imshow(msk, cmap= 'gray')
-    plt.axis('off')
-
-    plt.subplot(3,1,3)
-    plt.imshow(msk_pred, cmap = 'gray')
-    plt.axis('off')
+    combined = PILImage.new('RGB', (img_pil.width, img_pil.height * 3))
+    combined.paste(img_pil, (0, 0))
+    combined.paste(msk_pil.convert('RGB'), (0, img_pil.height))
+    combined.paste(pred_pil.convert('RGB'), (0, img_pil.height * 2))
 
     if test_data_name is not None:
         save_path = save_path + test_data_name + '_'
-    plt.savefig(save_path + str(i) +'.png')
-    plt.close()
+    os.makedirs(save_path, exist_ok=True)
+    combined.save(save_path + str(i) + '.png')
     
 
 
