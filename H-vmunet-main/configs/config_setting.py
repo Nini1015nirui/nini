@@ -36,7 +36,7 @@ class setting_config:
     local_rank = -1
     num_workers = 0
     seed = 42
-    device = 'cpu'
+    device = 'cuda'
     world_size = None
     rank = None
     amp = False
